@@ -15,7 +15,7 @@
  *  PASSWORD_MIN_LENGTH     (по умолчанию 8)
  */
 
-import { Pool } from 'pg';
+import { Pool, DatabaseError } from 'pg';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
@@ -64,9 +64,12 @@ export class AuthService {
       const r = q.rows[0];
       user = { id: String(r.id), email: String(r.email), displayName: String(r.display_name), nickname: r.nickname, roles: r.roles || [] };
     } catch (e: any) {
-      const msg = String(e?.message || '').toLowerCase();
-      if (msg.includes('ux_users_email_alive')) throw this.err(409, 'email_already_exists');
-      if (msg.includes('ux_users_nickname_alive')) throw this.err(409, 'nickname_already_exists');
+      if (e instanceof DatabaseError) {
+        if (e.code === '23505') {
+          if (e.constraint === 'ux_users_email_alive') throw this.err(409, 'email_already_exists');
+          if (e.constraint === 'ux_users_nickname_alive') throw this.err(409, 'nickname_already_exists');
+        }
+      }
       throw e;
     }
     if (!user) throw this.err(500, 'user_not_created');
