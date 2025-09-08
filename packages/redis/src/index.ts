@@ -1,5 +1,6 @@
 // packages/redis/src/index.ts
 import IORedis, { Redis, Result } from 'ioredis';
+import { randomUUID } from 'node:crypto';
 import { env } from '@config/index';
 
 export let redis: Redis | null = null;
@@ -23,8 +24,8 @@ export async function closeRedis(): Promise<void> {
 }
 
 export function makeConsumerName(prefix: string): string {
-  const rnd = Math.random().toString(36).slice(2, 8);
-  return `${prefix}-${process.pid}-${rnd}`;
+  const id = randomUUID();
+  return `${prefix}-${process.pid}-${id}`;
 }
 
 export async function ensureGroup(stream: string, group: string): Promise<void> {
