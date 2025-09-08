@@ -225,6 +225,18 @@ export const uploadRoutes: FastifyPluginAsync = async (app: FastifyInstance) => 
       // Предполагаем, что объект уже собран, делаем HEAD, фиксируем размер:
       // (В реальном коде используйте CompleteMultipartUploadCommand)
       // Здесь — просто обновим updated_at.
+      // Complete multipart on S3 and mark updated
+      const completed = await s3.send(new CompleteMultipartUploadCommand({
+        Bucket: S3_BUCKET_PRIVATE,
+        Key: key,
+        UploadId: uploadId,
+        MultipartUpload: {
+          Parts: (parts as any[])
+            .map((p) => ({ PartNumber: Number(p.partNumber), ETag: String(p.etag) }))
+            .sort((a, b) => a.PartNumber - b.PartNumber),
+        },
+      }));
+      if (!completed || !completed.ETag) { const e: any = new Error('upload_complete_failed'); e.statusCode = 500; throw e; }
       await pool.query(`UPDATE media_files SET updated_at=now_utc() WHERE id=$1`, [String(mediaId)]);
 
       // Публикуем ТОЛЬКО antivirus + metadata
@@ -266,6 +278,7 @@ export const uploadRoutes: FastifyPluginAsync = async (app: FastifyInstance) => 
       const { key, uploadId } = req.body as any;
       const check = await pool.query(`SELECT 1 FROM media_files WHERE id=$1 AND owner_id=$2 LIMIT 1`, [String(mediaId), ownerId]);
       if (!check.rowCount) { const e: any = new Error('forbidden'); e.statusCode = 403; throw e; }
+      try { await s3.send(new AbortMultipartUploadCommand({ Bucket: S3_BUCKET_PRIVATE, Key: key, UploadId: uploadId })); } catch {}
       await pool.query(`DELETE FROM media_files WHERE id=$1`, [String(mediaId)]).catch(() => {});
       return reply.send({ ok: true as const });
     },
