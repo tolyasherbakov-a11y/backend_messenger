@@ -13,6 +13,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
+import type { Redis as RedisClient } from 'ioredis';
 import { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
@@ -41,7 +42,7 @@ class UploadService {
   private partSize = 5 * 1024 * 1024;
   constructor(
     private pool: Pool,
-    private redis: Redis,
+    private redis: RedisClient,
     private s3: S3Client,
     private cfg = { bucket: S3_BUCKET_PRIVATE, presignTtlSec: Number(UPLOAD_PRESIGN_TTL_SEC) }
   ) {}
