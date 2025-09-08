@@ -14,7 +14,8 @@
     "lint": "eslint --config .eslintrc.json --ext .ts .",
     "typecheck": "tsc -b",
     "format": "prettier --write .",
-    "clean": "rimraf \"**/dist\""
+    "clean": "rimraf \"**/dist\"",
+    "test": "pnpm dlx vitest"
   },
   "devDependencies": {
     "@types/node": "^20.14.11",
@@ -26,7 +27,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.4"
   }
 }
   
