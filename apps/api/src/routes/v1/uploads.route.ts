@@ -13,7 +13,8 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
-import { S3Client } from '@aws-sdk/client-s3';
+import { S3Client, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
 
 const {
