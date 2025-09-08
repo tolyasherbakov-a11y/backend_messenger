@@ -9,9 +9,11 @@ import { registerOpenAPI } from './plugins/openapi';
 import { registerValidation } from './plugins/validation';
 import { registerSecurity } from './plugins/security';
 import { registerRateLimit } from './plugins/ratelimit';
+import helmet from '@fastify/helmet';
 
 import { Pool } from 'pg';
 import Redis from 'ioredis';
+import crypto from 'node:crypto';
 
 // V1 агрегатор
 import v1Routes from './routes/v1/index';
@@ -79,7 +81,7 @@ const app: FastifyInstance = Fastify({
   },
   bodyLimit: 10 * 1024 * 1024, // 10MB; большие аплоады идут напрямую в S3
   requestIdHeader: 'x-request-id',
-  genReqId: () => cryptoRandomId(),
+  genReqId: () => cryptoRandomUUID(),
 });
 
 // Core plugins & hardening
@@ -90,10 +92,7 @@ await registerOpenAPI(app);
 await app.register(metricsPlugin, { pool: pgPool, redis });
 
 function nonce() {
-  return Buffer.from(cryptoRandomId()).toString('base64');
-}
-function cryptoRandomId(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return crypto.randomBytes(16).toString('base64');
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
