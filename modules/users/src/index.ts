@@ -74,7 +74,7 @@ export async function updateProfile(userId: string, patch: { displayName?: strin
   const rows = await sql<UserRecord[]>`
     UPDATE users
        SET display_name = COALESCE(${dn}, display_name),
-           avatar_media_id = ${av}::text,
+           avatar_media_id = COALESCE(${av}::uuid, avatar_media_id),
            updated_at = now()
      WHERE id = ${userId}
      RETURNING *

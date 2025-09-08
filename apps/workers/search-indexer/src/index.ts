@@ -130,7 +130,7 @@ async function ensureIndex() {
 
 async function selectMessage(id: string) {
   const q = await pool.query(
-    `SELECT m.id, m.conversation_id, m.sender_id, m.text, m.created_at, m.updated_at
+    `SELECT m.id, m.conversation_id, m.author_id, m.text, m.created_at, m.updated_at
        FROM messages m WHERE m.id=$1 LIMIT 1`,
     [id]
   );
@@ -141,7 +141,7 @@ async function selectMessage(id: string) {
     id: String(r.id),
     type: 'message' as const,
     tenant_id: null,
-    owner_id: String(r.sender_id),
+    owner_id: String(r.author_id),
     created_at: r.created_at,
     updated_at: r.updated_at,
     text,

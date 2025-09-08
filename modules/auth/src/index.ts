@@ -7,8 +7,8 @@
  * - Управление сессиями: list(), revoke(sessionId)
  *
  * ENV (обязательные/рекомендуемые):
- *  AUTH_JWT_ISS            (напр. "messenger.api")
- *  AUTH_JWT_AUD            (напр. "messenger.web")
+ *  AUTH_JWT_ISSUER         (напр. "messenger.api")
+ *  AUTH_JWT_AUDIENCE       (напр. "messenger.web")
  *  AUTH_JWT_ACCESS_TTL     (в секундах, напр. 900 = 15 мин)
  *  AUTH_JWT_REFRESH_TTL    (в секундах, напр. 2592000 = 30 дней)
  *  AUTH_JWT_SECRET         (32+ байт; используется HMAC SHA-256 через 'jose')
@@ -241,16 +241,17 @@ export class AuthService {
   }
 
   private async signAccessJwt(payload: Partial<JWTPayload> & { sub: string }): Promise<{ token: string; exp: number }> {
-    const iss = this.env.AUTH_JWT_ISS || 'messenger.api';
-    const aud = this.env.AUTH_JWT_AUD || 'messenger.web';
+    const iss = this.env.AUTH_JWT_ISSUER || 'messenger.api';
+    const aud = this.env.AUTH_JWT_AUDIENCE || 'messenger.web';
     const ttl = this.accessTtl();
     const secret = this.jwtSecretKey(); // Uint8Array
     const now = Math.floor(Date.now() / 1000);
     const exp = now + ttl;
 
-    const token = await new SignJWT({})
+    const { sub, ...rest } = payload;
+    const token = await new SignJWT(rest as JWTPayload)
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-      .setSubject(payload.sub)
+      .setSubject(sub)
       .setIssuedAt(now)
       .setIssuer(iss)
       .setAudience(aud)
@@ -264,8 +265,8 @@ export class AuthService {
   async verifyAccessJwt(token: string): Promise<JWTPayload> {
     const secret = this.jwtSecretKey();
     const { payload } = await jwtVerify(token, secret, {
-      issuer: this.env.AUTH_JWT_ISS || 'messenger.api',
-      audience: this.env.AUTH_JWT_AUD || 'messenger.web',
+      issuer: this.env.AUTH_JWT_ISSUER || 'messenger.api',
+      audience: this.env.AUTH_JWT_AUDIENCE || 'messenger.web',
     });
     return payload;
   }
@@ -273,7 +274,7 @@ export class AuthService {
   private accessTtl(): number {
     const s = Number(this.env.AUTH_JWT_ACCESS_TTL);
     return Number.isFinite(s) && s > 0 ? s : 900; // 15 минут по умолчанию
-    }
+  }
   private refreshTtl(): number {
     const s = Number(this.env.AUTH_JWT_REFRESH_TTL);
     return Number.isFinite(s) && s > 0 ? s : 60 * 60 * 24 * 30; // 30 дней по умолчанию

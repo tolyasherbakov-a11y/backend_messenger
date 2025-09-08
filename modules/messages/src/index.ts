@@ -9,8 +9,8 @@
  * Требования к БД:
  *  - conversations(id, last_message_at, deleted_at)
  *  - conversation_members(conversation_id, user_id, left_at, role)
- *  - messages(id uuid, conversation_id, sender_id, kind enum('text','media','system'),
- *             text, media_id uuid NULL, reply_to uuid NULL, deleted_at timestamptz NULL,
+*  - messages(id uuid, conversation_id, author_id, kind enum('text','media','system'),
+ *             text, media_id uuid NULL, reply_to_id uuid NULL, deleted_at timestamptz NULL,
  *             created_at, updated_at)
  *  - message_receipts(message_id, user_id, delivered_at, read_at, PRIMARY KEY(message_id, user_id))
  *  - media_files(id uuid, ref_count int, quarantined bool, antivirus_status enum, owner_id, mime, ...)
@@ -29,17 +29,17 @@ export type MessageKind = 'text'|'media'|'system';
 
 export type SendTextInput = {
   conversationId: string;
-  senderId: string;
+  authorId: string;
   text: string;
-  replyTo?: string | null;
+  replyToId?: string | null;
 };
 
 export type SendMediaInput = {
   conversationId: string;
-  senderId: string;
+  authorId: string;
   mediaId: string;       // ссылка на media_files
   caption?: string | null;
-  replyTo?: string | null;
+  replyToId?: string | null;
 };
 
 export type SendSystemInput = {
@@ -58,16 +58,16 @@ export class MessagesService {
 
   async sendText(input: SendTextInput): Promise<{ id: string }> {
     this.ensureUuid(input.conversationId);
-    this.ensureUuid(input.senderId);
+    this.ensureUuid(input.authorId);
     const text = (input.text ?? '').trim();
     if (!text) this.errThrow(400, 'text_required');
-    if (input.replyTo) this.ensureUuid(input.replyTo);
+    if (input.replyToId) this.ensureUuid(input.replyToId);
 
-    await this.ensureMember(input.conversationId, input.senderId);
+    await this.ensureMember(input.conversationId, input.authorId);
 
     // reply_to проверка (если задан)
-    if (input.replyTo) {
-      const ok = await this.isMessageInConversation(input.replyTo, input.conversationId);
+    if (input.replyToId) {
+      const ok = await this.isMessageInConversation(input.replyToId, input.conversationId);
       if (!ok) this.errThrow(400, 'reply_to_invalid');
     }
 
@@ -75,18 +75,21 @@ export class MessagesService {
     try {
       await cli.query('BEGIN');
       const q = await cli.query(
-        `INSERT INTO messages (conversation_id, sender_id, kind, text, reply_to)
+        `INSERT INTO messages (conversation_id, author_id, kind, text, reply_to_id)
          VALUES ($1, $2, 'text', $3, $4)
          RETURNING id`,
-        [input.conversationId, input.senderId, text, input.replyTo ?? null]
+         [input.conversationId, input.authorId, text, input.replyToId ?? null]
       );
       const msgId = String(q.rows[0].id);
 
       // обновить last_message_at
-      await cli.query(`UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`, [input.conversationId]);
+      await cli.query(
+        `UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`,
+        [input.conversationId]
+      );
 
       // квитанция отправителя «доставлено и прочитано» сразу
-      await this.upsertReceipt(cli, msgId, input.senderId, { delivered: true, read: true });
+      await this.upsertReceipt(cli, msgId, input.authorId, { delivered: true, read: true });
 
       await cli.query('COMMIT');
       return { id: msgId };
@@ -100,10 +103,10 @@ export class MessagesService {
 
   async sendMedia(input: SendMediaInput): Promise<{ id: string }> {
     this.ensureUuid(input.conversationId);
-    this.ensureUuid(input.senderId);
+    this.ensureUuid(input.authorId);
     this.ensureUuid(input.mediaId);
-    if (input.replyTo) this.ensureUuid(input.replyTo);
-    await this.ensureMember(input.conversationId, input.senderId);
+    if (input.replyToId) this.ensureUuid(input.replyToId);
+    await this.ensureMember(input.conversationId, input.authorId);
 
     // Проверим media доступность
     const m = await this.pool.query(
@@ -116,8 +119,8 @@ export class MessagesService {
       this.errThrow(400, 'media_blocked');
     }
 
-    if (input.replyTo) {
-      const ok = await this.isMessageInConversation(input.replyTo, input.conversationId);
+    if (input.replyToId) {
+      const ok = await this.isMessageInConversation(input.replyToId, input.conversationId);
       if (!ok) this.errThrow(400, 'reply_to_invalid');
     }
 
@@ -126,18 +129,24 @@ export class MessagesService {
       await cli.query('BEGIN');
 
       // инкремент ref_count
-      await cli.query(`UPDATE media_files SET ref_count = ref_count + 1, updated_at = now_utc() WHERE id = $1`, [input.mediaId]);
+      await cli.query(
+        `UPDATE media_files SET ref_count = ref_count + 1, updated_at = now_utc() WHERE id = $1`,
+        [input.mediaId]
+      );
 
       const q = await cli.query(
-        `INSERT INTO messages (conversation_id, sender_id, kind, text, media_id, reply_to)
+        `INSERT INTO messages (conversation_id, author_id, kind, text, media_id, reply_to_id)
          VALUES ($1, $2, 'media', $3, $4, $5)
          RETURNING id`,
-        [input.conversationId, input.senderId, input.caption ?? null, input.mediaId, input.replyTo ?? null]
+         [input.conversationId, input.authorId, input.caption ?? null, input.mediaId, input.replyToId ?? null]
       );
       const msgId = String(q.rows[0].id);
 
-      await cli.query(`UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`, [input.conversationId]);
-      await this.upsertReceipt(cli, msgId, input.senderId, { delivered: true, read: true });
+      await cli.query(
+        `UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`,
+        [input.conversationId]
+      );
+      await this.upsertReceipt(cli, msgId, input.authorId, { delivered: true, read: true });
 
       await cli.query('COMMIT');
       return { id: msgId };
@@ -162,14 +171,17 @@ export class MessagesService {
     try {
       await cli.query('BEGIN');
       const q = await cli.query(
-        `INSERT INTO messages (conversation_id, sender_id, kind, text)
+        `INSERT INTO messages (conversation_id, author_id, kind, text)
          VALUES ($1, $2, 'system', $3)
          RETURNING id`,
         [input.conversationId, input.actorId, JSON.stringify({ text, meta: input.meta ?? null })]
       );
       const msgId = String(q.rows[0].id);
 
-      await cli.query(`UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`, [input.conversationId]);
+      await cli.query(
+        `UPDATE conversations SET last_message_at = now_utc(), updated_at = now_utc() WHERE id = $1`,
+        [input.conversationId]
+      );
       await this.upsertReceipt(cli, msgId, input.actorId, { delivered: true, read: true });
 
       await cli.query('COMMIT');
@@ -201,7 +213,7 @@ export class MessagesService {
     }
 
     const q = await this.pool.query(
-      `SELECT id, conversation_id, sender_id, kind, text, media_id, reply_to, created_at
+      `SELECT id, conversation_id, author_id, kind, text, media_id, reply_to_id, created_at
          FROM messages
         WHERE conversation_id = $1 AND ${where}
         ORDER BY created_at DESC, id DESC
@@ -281,7 +293,7 @@ export class MessagesService {
 
     // Автор может удалить своё; owner/admin беседы могут удалить любое
     const can = await this.pool.query(
-      `SELECT (sender_id = $1) AS is_author
+      `SELECT (author_id = $1) AS is_author
          FROM messages
         WHERE id = $2 AND conversation_id = $3 AND deleted_at IS NULL
         LIMIT 1`,

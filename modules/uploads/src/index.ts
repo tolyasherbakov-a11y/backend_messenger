@@ -54,7 +54,7 @@ export class UploadService {
     private redis: Redis,
     private s3: S3Client,
     private cfg = {
-      bucket: process.env.S3_BUCKET_PRIVATE || 'media',
+      bucket: process.env.S3_BUCKET || 'media',
       presignTtlSec: Number(process.env.UPLOAD_PRESIGN_TTL_SEC || 900), // 15m
     }
   ) {}

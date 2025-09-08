@@ -12,8 +12,9 @@ import { registerRateLimit } from './plugins/ratelimit';
 import helmet from '@fastify/helmet';
 
 import { Pool } from 'pg';
-import Redis from 'ioredis';
 import crypto from 'node:crypto';
+import type { Redis } from 'ioredis';
+import { initRedis, redis as redisClient, closeRedis } from '@redis/index';
 
 // V1 агрегатор
 import v1Routes from './routes/v1/index';
@@ -29,8 +30,6 @@ const {
   DB_URL = 'postgres://app:app@postgres:5432/app',
   DB_STATEMENT_TIMEOUT_MS = '5000',
   DB_IDLE_TX_TIMEOUT_MS = '5000',
-  // Redis
-  REDIS_URL = 'redis://redis:6379',
   // CORS
   CORS_ALLOWLIST = '', // "https://app.example.com,https://www.example.com"
 } = process.env;
@@ -57,11 +56,8 @@ const pgPool = new Pool({
   max: 20,
 });
 
-const redis = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: 3,
-  enableAutoPipelining: true,
-  lazyConnect: false,
-});
+await initRedis();
+const redis: Redis = redisClient!;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Fastify
@@ -205,7 +201,7 @@ async function shutdown(signal: string) {
   app.log.info({ signal }, 'graceful shutdown start');
   try { await app.close(); } catch (e) { app.log.error({ err: e }, 'fastify close failed'); }
   try { await pgPool.end(); } catch (e) { app.log.error({ err: e }, 'pg pool close failed'); }
-  try { await redis.quit(); } catch (e) { app.log.error({ err: e }, 'redis quit failed'); try { await redis.disconnect(); } catch {} }
+  try { await closeRedis(); } catch (e) { app.log.error({ err: e }, 'redis quit failed'); }
   app.log.info('shutdown complete');
   process.exit(0);
 }
