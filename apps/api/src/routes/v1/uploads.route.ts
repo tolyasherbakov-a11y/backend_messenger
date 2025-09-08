@@ -65,6 +65,17 @@ class UploadService {
     if (!uploadId) { const e: any = new Error('upload_init_failed'); e.statusCode = 500; throw e; }
     return { mediaId, key, uploadId, partSize: this.partSize };
   }
+  async presignPart(params: { key: string; uploadId: string; partNumber: number; contentLength?: number }) {
+    const cmd = new UploadPartCommand({
+      Bucket: this.cfg.bucket,
+      Key: params.key,
+      UploadId: params.uploadId,
+      PartNumber: params.partNumber,
+      ContentLength: params.contentLength,
+    });
+    const url = await getSignedUrl(this.s3, cmd, { expiresIn: this.cfg.presignTtlSec });
+    return { partNumber: params.partNumber, url };
+  }
 }
 
 async function publish(redis: Redis, stream: string, payload: any) {
