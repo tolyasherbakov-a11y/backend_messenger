@@ -132,17 +132,22 @@ export const uploadRoutes: FastifyPluginAsync = async (app: FastifyInstance) => 
         type: 'object',
         required: ['filename', 'mime', 'sizeBytes'],
         properties: {
-          filename: { type: 'string' },
-          mime: { type: 'string' },
-          sizeBytes: { type: 'integer', minimum: 0 },
+          filename: { type: 'string', minLength: 1 },
+          mime: { type: 'string', minLength: 1 },
+          sizeBytes: { type: 'integer', minimum: 0, maximum: 10737418240 },
         },
       },
     },
     handler: async (req, reply) => {
       const ownerId = requireUser(req);
       const { filename, mime, sizeBytes } = req.body as any;
-      const out = await svc.initiateMultipart({ ownerId, filename, mime, sizeBytes });
-      return reply.send(out);
+      try {
+        const out = await svc.initiateMultipart({ ownerId, filename, mime, sizeBytes });
+        return reply.send(out);
+      } catch (e) {
+        req.log?.error({ err: e }, 'init MPU failed');
+        return reply.code(500).send({ error: 'upload_init_failed' });
+      }
     },
   });
 
