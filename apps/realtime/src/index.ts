@@ -46,6 +46,10 @@ const {
   WS_PING_INTERVAL_MS = '25000',
 } = process.env;
 
+if (!AUTH_JWT_SECRET) {
+  throw new Error('AUTH_JWT_SECRET env var is required');
+}
+
 type AuthedUser = { id: string };
 type ClientMsg =
   | { action: 'subscribe'; topics: string[] }
@@ -81,13 +85,15 @@ function verifyJwtAuth(header?: string): AuthedUser | null {
   const m = header.match(/^Bearer\s+(.+)$/i);
   if (!m) return null;
   const token = m[1];
-  if (!AUTH_JWT_SECRET) return null;
   try {
-    const payload = jwt.verify(token, AUTH_JWT_SECRET) as any;
+    const payload = jwt.verify(token, AUTH_JWT_SECRET, { algorithms: ['HS256'] }) as any;
     const uid = String(payload.sub || payload.userId || payload.uid || '');
     if (!isUuid(uid)) return null;
     return { id: uid };
-  } catch { return null; }
+  } catch (err) {
+    console.error('jwt.verify failed:', err);
+    return null;
+  }
 }
 
 function verifyHmacAuth(headers: Record<string, any>): AuthedUser | null {
