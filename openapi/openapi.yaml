@@ -1,0 +1,1291 @@
+openapi: 3.1.0
+info:
+  title: Dooble API
+  description: CRUD API for apps, site and external integrations
+  version: 1.0.0
+servers:
+  - url: https://api.yourdomain.tld
+    description: Production
+  - url: http://localhost:8080
+    description: Local Dev
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        nickname:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: string
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+          nullable: true
+        topic:
+          type: string
+          nullable: true
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        senderId:
+          type: string
+        kind:
+          type: string
+        text:
+          type: string
+          nullable: true
+        mediaId:
+          type: string
+          nullable: true
+    Channel:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        about:
+          type: string
+          nullable: true
+        visibility:
+          type: string
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+        channelId:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+          nullable: true
+        mediaId:
+          type: string
+          nullable: true
+    MediaMeta:
+      type: object
+      properties:
+        id:
+          type: string
+        mime:
+          type: string
+        size:
+          type: integer
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        duration:
+          type: number
+          nullable: true
+security:
+  - bearerAuth: []
+paths:
+  /v1/auth/signup:
+    post:
+      summary: Sign up
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                displayName:
+                  type: string
+                nickname:
+                  type: string
+      responses:
+        "200":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+  /v1/auth/login:
+    post:
+      summary: Login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  accessExp:
+                    type: integer
+                  sessionId:
+                    type: string
+                  refreshToken:
+                    type: string
+                  refreshExp:
+                    type: integer
+  /v1/auth/refresh:
+    post:
+      summary: Refresh tokens
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  accessExp:
+                    type: integer
+                  sessionId:
+                    type: string
+                  refreshToken:
+                    type: string
+                  refreshExp:
+                    type: integer
+  /v1/auth/logout:
+    post:
+      summary: Logout
+      tags: [auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Logged out
+  /v1/auth/sessions:
+    get:
+      summary: List active sessions
+      tags: [auth]
+      responses:
+        "200":
+          description: List of sessions
+  /v1/auth/sessions/{id}/revoke:
+    post:
+      summary: Revoke session
+      tags: [auth]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session revoked
+  /v1/upload/initiate:
+    post:
+      summary: Initiate multipart upload
+      tags: [upload]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, mime, sizeBytes]
+              properties:
+                filename:
+                  type: string
+                mime:
+                  type: string
+                sizeBytes:
+                  type: integer
+      responses:
+        "200":
+          description: Upload initiated
+  /v1/upload/{mediaId}/parts:
+    post:
+      summary: Presign upload part URLs
+      tags: [upload]
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, uploadId, parts]
+              properties:
+                key:
+                  type: string
+                uploadId:
+                  type: string
+                parts:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Presigned URLs
+  /v1/upload/{mediaId}/complete:
+    post:
+      summary: Complete multipart upload
+      tags: [upload]
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, uploadId, parts]
+              properties:
+                key:
+                  type: string
+                uploadId:
+                  type: string
+                parts:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Upload completed
+  /v1/upload/{mediaId}:
+    delete:
+      summary: Abort upload and remove record
+      tags: [upload]
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Upload aborted
+  /v1/media/{id}:
+    get:
+      summary: Get media metadata with links
+      tags: [media]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Media metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaMeta'
+  /v1/media:
+    get:
+      summary: List my media
+      tags: [media]
+      responses:
+        "200":
+          description: Media list
+  /v1/media/{id}/original:
+    get:
+      summary: Get presigned URL for original media
+      tags: [media]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Presigned URL
+  /v1/media/{id}/variant/{profile}:
+    get:
+      summary: Get presigned URL for media variant
+      tags: [media]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: profile
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Presigned URL
+  /v1/conversations:
+    get:
+      summary: List conversations
+      tags: [conversations]
+      responses:
+        "200":
+          description: Conversation list
+    post:
+      summary: Create conversation
+      tags: [conversations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [private, group]
+                otherUserId:
+                  type: string
+                title:
+                  type: string
+                topic:
+                  type: string
+                  nullable: true
+                members:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Conversation created
+  /v1/conversations/{id}:
+    get:
+      summary: Get conversation by id
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Conversation
+    patch:
+      summary: Update conversation
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                topic:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Updated conversation
+  /v1/conversations/{id}/members:
+    post:
+      summary: Add members
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [members]
+              properties:
+                members:
+                  type: array
+                  items:
+                    type: object
+                    required: [userId]
+                    properties:
+                      userId:
+                        type: string
+                      role:
+                        type: string
+      responses:
+        "200":
+          description: Members added
+  /v1/conversations/{id}/members/{userId}:
+    delete:
+      summary: Remove member
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member removed
+    patch:
+      summary: Update member settings
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                notifications:
+                  type: object
+                  nullable: true
+      responses:
+        "200":
+          description: Member updated
+  /v1/conversations/{id}/leave:
+    post:
+      summary: Leave conversation
+      tags: [conversations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Left conversation
+  /v1/conversations/{cid}/messages:
+    get:
+      summary: List messages
+      tags: [messages]
+      parameters:
+        - name: cid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages list
+    post:
+      summary: Send message
+      tags: [messages]
+      parameters:
+        - name: cid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [kind, text]
+                  properties:
+                    kind:
+                      const: text
+                    text:
+                      type: string
+                    replyTo:
+                      type: string
+                - type: object
+                  required: [kind, mediaId]
+                  properties:
+                    kind:
+                      const: media
+                    mediaId:
+                      type: string
+                    caption:
+                      type: string
+                      nullable: true
+                    replyTo:
+                      type: string
+                      nullable: true
+      responses:
+        "200":
+          description: Message sent
+  /v1/conversations/{cid}/messages/receipts:
+    post:
+      summary: Mark delivered/read receipts
+      tags: [messages]
+      parameters:
+        - name: cid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delivered:
+                  type: array
+                  items:
+                    type: string
+                read:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Receipts updated
+  /v1/conversations/{cid}/messages/{mid}:
+    delete:
+      summary: Delete message
+      tags: [messages]
+      parameters:
+        - name: cid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Message deleted
+  /v1/channels:
+    get:
+      summary: List channels
+      tags: [channels]
+      responses:
+        "200":
+          description: Channels list
+    post:
+      summary: Create channel
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, title]
+              properties:
+                slug:
+                  type: string
+                title:
+                  type: string
+                about:
+                  type: string
+                  nullable: true
+                visibility:
+                  type: string
+                  enum: [public, unlisted, private]
+      responses:
+        "200":
+          description: Channel created
+  /v1/channels/{idOrSlug}:
+    get:
+      summary: Get channel
+      tags: [channels]
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Channel
+  /v1/channels/{id}:
+    patch:
+      summary: Update channel
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                about:
+                  type: string
+                  nullable: true
+                visibility:
+                  type: string
+                  enum: [public, unlisted, private]
+      responses:
+        "200":
+          description: Updated channel
+  /v1/channels/{id}/publish:
+    post:
+      summary: Publish channel
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Published
+  /v1/channels/{id}/archive:
+    post:
+      summary: Archive channel
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Archived
+  /v1/channels/{id}/transfer:
+    post:
+      summary: Transfer ownership
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newOwnerId]
+              properties:
+                newOwnerId:
+                  type: string
+      responses:
+        "200":
+          description: Ownership transferred
+  /v1/channels/{id}/members:
+    post:
+      summary: Add channel members
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [members]
+              properties:
+                members:
+                  type: array
+                  items:
+                    type: object
+                    required: [userId]
+                    properties:
+                      userId:
+                        type: string
+                      role:
+                        type: string
+                        enum: [owner, admin, moderator, member]
+      responses:
+        "200":
+          description: Members added
+  /v1/channels/{id}/members/{userId}:
+    delete:
+      summary: Remove channel member
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member removed
+    patch:
+      summary: Update channel member role
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [admin, moderator, member]
+      responses:
+        "200":
+          description: Member updated
+  /v1/channels/{id}/follow:
+    post:
+      summary: Follow channel
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Following
+    delete:
+      summary: Unfollow channel
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unfollowed
+    get:
+      summary: Get follow status
+      tags: [channels]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Follow status
+  /v1/posts:
+    post:
+      summary: Create post draft
+      tags: [posts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channelId, title]
+              properties:
+                channelId:
+                  type: string
+                title:
+                  type: string
+                text:
+                  type: string
+                  nullable: true
+                mediaId:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Post created
+  /v1/posts/{id}:
+    patch:
+      summary: Update post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                text:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Post updated
+    get:
+      summary: Get post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post
+  /v1/posts/{id}/media:
+    post:
+      summary: Attach or replace media
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mediaId:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Media attached
+  /v1/posts/{id}/publish:
+    post:
+      summary: Publish post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post published
+  /v1/posts/{id}/archive:
+    post:
+      summary: Archive post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post archived
+  /v1/channels/{id}/posts:
+    get:
+      summary: List channel posts
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Posts list
+  /v1/feed:
+    get:
+      summary: Public feed
+      tags: [posts]
+      responses:
+        "200":
+          description: Feed
+  /v1/posts/{id}/like:
+    post:
+      summary: Like post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liked
+    delete:
+      summary: Unlike post
+      tags: [posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unliked
+  /v1/search:
+    get:
+      summary: Search across entities
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: types
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+  /v1/search/suggest:
+    get:
+      summary: Search suggestions
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: types
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Suggestions
+  /v1/communities:
+    post:
+      summary: Create community
+      tags: [communities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, handle, title]
+              properties:
+                kind:
+                  type: string
+                handle:
+                  type: string
+                title:
+                  type: string
+                description:
+                  type: string
+                  nullable: true
+                isPublic:
+                  type: boolean
+                postingPolicy:
+                  type: string
+      responses:
+        "201":
+          description: Community created
+    get:
+      summary: List communities
+      tags: [communities]
+      responses:
+        "200":
+          description: Communities list
+  /v1/communities/{idOrHandle}:
+    get:
+      summary: Get community by id or handle
+      tags: [communities]
+      parameters:
+        - name: idOrHandle
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Community
+  /v1/communities/{id}:
+    patch:
+      summary: Update community
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                isPublic:
+                  type: boolean
+                postingPolicy:
+                  type: string
+      responses:
+        "200":
+          description: Community updated
+    delete:
+      summary: Delete community
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Community deleted
+  /v1/communities/{id}/join:
+    post:
+      summary: Join or subscribe to community
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Joined
+  /v1/communities/{id}/leave:
+    post:
+      summary: Leave or unsubscribe from community
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Left
+  /v1/communities/{id}/members/me:
+    get:
+      summary: Get my membership
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Membership
+  /v1/communities/{id}/members/{userId}/role:
+    post:
+      summary: Set member role
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [owner, admin, moderator, member, subscriber]
+      responses:
+        "200":
+          description: Role set
+  /v1/communities/{id}/members/{userId}/ban:
+    post:
+      summary: Ban member
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member banned
+  /v1/communities/{id}/members/{userId}/unban:
+    post:
+      summary: Unban member
+      tags: [communities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member unbanned
