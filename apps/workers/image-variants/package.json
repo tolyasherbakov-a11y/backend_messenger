@@ -1,0 +1,20 @@
+{
+    "name": "worker-image-variants",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/main.js",
+    "types": "dist/main.d.ts",
+    "scripts": {
+      "build": "tsc -p tsconfig.json",
+      "start": "node dist/main.js"
+    },
+    "dependencies": {
+      "sharp": "^0.33.4",
+      "@config": "workspace:*",
+      "@db": "workspace:*",
+      "@redis": "workspace:*",
+      "@s3": "workspace:*"
+    }
+  }
+  

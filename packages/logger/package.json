@@ -1,0 +1,21 @@
+{
+    "name": "@logger",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "scripts": {
+      "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+      "pino": "^9.3.2"
+    }
+  }
+  

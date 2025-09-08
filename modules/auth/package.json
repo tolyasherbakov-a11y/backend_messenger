@@ -1,0 +1,23 @@
+{
+    "name": "@modules/auth",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "scripts": {
+      "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+      "jose": "^5.9.3",
+      "@redis": "workspace:*",
+      "@config": "workspace:*"
+    }
+  }
+  

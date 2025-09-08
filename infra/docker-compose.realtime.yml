@@ -1,0 +1,46 @@
+# Дополнительный файл к основному compose: включает Realtime WS Gateway.
+# Запуск вместе с базовым:
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.realtime.yml up -d
+
+version: "3.9"
+
+services:
+  realtime:
+    build:
+      context: ../apps/realtime
+      dockerfile: Dockerfile
+    container_name: backend-realtime
+    restart: unless-stopped
+    environment:
+      # Сетевые параметры
+      PORT: 8081
+      # Подключения
+      REDIS_URL: redis://redis:6379
+      DB_URL: postgres://app:app@postgres:5432/app
+      # Авторизация WS (любой один из секретов обязателен на проде)
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me}
+      AUTH_HMAC_SECRET: ${AUTH_HMAC_SECRET:-}
+      # Тюнинг
+      WS_MAX_SUBS: 200
+      WS_PING_INTERVAL_MS: 25000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - backend
+    ports:
+      # проброс наружу (опционально; если за nginx — можно убрать)
+      - "8081:8081"
+
+networks:
+  backend:
+    external: true
+    name: backend
