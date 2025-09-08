@@ -1,4 +1,4 @@
-// server/apps/workers/media-metadata/package.json
+// apps/workers/media-metadata/package.json
 {
   "name": "worker-media-metadata",
   "version": "1.0.0",

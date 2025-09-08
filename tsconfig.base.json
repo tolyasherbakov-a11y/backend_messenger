@@ -7,7 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "strict": true,
     "resolveJsonModule": true,
     "sourceMap": true,
@@ -23,9 +23,9 @@
       "@validation/*": ["packages/validation/src/*"],
       "@modules/*": [
         "modules/*/src/index.ts",
-        "modules/*/src/*",
+        "modules/*/src",
         "modules/*/index.ts",
-        "modules/*/*"
+        "modules/*"
       ],
       "@modules/media": ["modules/media/index.ts"]
     }

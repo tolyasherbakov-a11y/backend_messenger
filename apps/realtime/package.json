@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "fastify": "^4.28.1",
-    "@fastify/websocket": "^8.5.1",
+    "@fastify/websocket": "^11.2.0",
     "ws": "^8.17.1",
     "ioredis": "^5.4.1",
     "pg": "^8.12.0",
