@@ -55,7 +55,15 @@ class UploadService {
       [mediaId, input.ownerId, key, input.mime || 'application/octet-stream', Number(input.sizeBytes || 0)]
     );
     // Клиент у вас уже реализует пресайны; здесь возвращаем базовые параметры
-    return { mediaId, key, uploadId: 'use-your-init-mpu', partSize: this.partSize };
+    const init = await this.s3.send(new CreateMultipartUploadCommand({
+      Bucket: this.cfg.bucket,
+      Key: key,
+      ContentType: input.mime || 'application/octet-stream',
+      ACL: 'private',
+    }));
+    const uploadId = String(init.UploadId || '');
+    if (!uploadId) { const e: any = new Error('upload_init_failed'); e.statusCode = 500; throw e; }
+    return { mediaId, key, uploadId, partSize: this.partSize };
   }
 }
 
