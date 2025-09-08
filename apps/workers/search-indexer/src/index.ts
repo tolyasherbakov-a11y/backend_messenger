@@ -37,6 +37,7 @@
 
 import { Client } from '@opensearch-project/opensearch';
 import http from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 
@@ -298,7 +299,7 @@ async function ensureGroups() {
   await ensure(STREAM_DELETE);
 }
 
-function rid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function rid() { return randomUUID(); }
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)); }
 
 async function loop() {

@@ -69,7 +69,7 @@ const s3 = new S3Client({
 });
 
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)); }
-function rid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function rid() { return randomUUID(); }
 
 async function ensureGroup() {
   try { await redis.xgroup('CREATE', STREAM_NAME, GROUP_NAME, '0', 'MKSTREAM'); }

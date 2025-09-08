@@ -5,6 +5,7 @@
  */
 import IORedis from 'ioredis';
 import http from 'node:http';
+import { randomUUID } from 'node:crypto';
 
 const {
   REDIS_URL = 'redis://localhost:6379/0',
@@ -48,7 +49,7 @@ function parseJson<T = any>(raw: string | undefined): T | null {
 }
 
 async function run() {
-  const consumerId = `notify-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  const consumerId = `notify-${process.pid}-${randomUUID()}`;
   const redis = new IORedis(REDIS_URL, { maxRetriesPerRequest: 3, enableAutoPipelining: true });
   await ensureGroup(redis, STREAM_NOTIFY, GROUP_NOTIFY);
   const conc = Math.max(1, Math.min(Number(CONCURRENCY) || 2, 16));

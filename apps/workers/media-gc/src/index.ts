@@ -13,6 +13,7 @@
  * Удаление выполняется в порядке: S3 variants -> S3 original -> DELETE FROM media_files (CASCADE variants).
  */
 
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 import {
@@ -70,7 +71,7 @@ type Job =
   | { type: 'delete_variant'; mediaId: string; profile: '360p'|'480p'|'720p'|'1080p' }
   | { type: 'cleanup_uploads' };
 
-function randomId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function randomId() { return randomUUID(); }
 function delay(ms: number) { return new Promise(res => setTimeout(res, ms)); }
 
 async function ensureGroup() {
