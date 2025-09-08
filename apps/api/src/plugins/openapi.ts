@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRegisterOptions } from 'fastify';
 import swagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { env } from '@config/index';
-import { z } from 'zod';
+// zod may be used for examples if needed
 
 function buildSwaggerOptions(): FastifyRegisterOptions<FastifyDynamicSwaggerOptions> {
   const openapi: any = {
@@ -54,4 +54,3 @@ export const ExampleUser = z.object({
   email: z.string().email(),
   nickname: z.string().min(2).max(32)
 });
-

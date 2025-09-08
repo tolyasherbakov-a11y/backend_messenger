@@ -15,6 +15,8 @@ RUN pnpm install
 FROM deps AS build
 WORKDIR /app
 COPY tsconfig.json ./
+# worker sources can be in index.ts at root
+COPY index.ts ./index.ts
 COPY src ./src
 RUN pnpm build
 
@@ -30,4 +32,3 @@ RUN corepack enable && corepack prepare pnpm@9.7.1 --activate && pnpm install --
 COPY --chown=app:app --from=build /app/dist ./dist
 ENTRYPOINT ["/sbin/tini","--"]
 CMD ["node","dist/index.js"]
-
