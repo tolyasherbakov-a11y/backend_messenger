@@ -66,6 +66,10 @@ const redis = new Redis(REDIS_URL, {
 // ──────────────────────────────────────────────────────────────────────────────
 // Fastify
 // ──────────────────────────────────────────────────────────────────────────────
+function randomId() {
+  return crypto.randomUUID();
+}
+
 const app: FastifyInstance = Fastify({
   logger: {
     level: isProd ? 'info' : 'debug',
@@ -81,7 +85,7 @@ const app: FastifyInstance = Fastify({
   },
   bodyLimit: 10 * 1024 * 1024, // 10MB; большие аплоады идут напрямую в S3
   requestIdHeader: 'x-request-id',
-  genReqId: () => cryptoRandomUUID(),
+  genReqId: randomId,
 });
 
 // Core plugins & hardening
@@ -92,7 +96,7 @@ await registerOpenAPI(app);
 await app.register(metricsPlugin, { pool: pgPool, redis });
 
 function nonce() {
-  return crypto.randomBytes(16).toString('base64');
+  return randomId();
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
