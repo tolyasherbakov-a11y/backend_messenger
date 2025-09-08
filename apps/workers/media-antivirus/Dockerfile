@@ -17,7 +17,6 @@ WORKDIR /app
 COPY tsconfig.json ./
 # worker sources can be in index.ts at root
 COPY index.ts ./index.ts
-COPY src ./src
 RUN pnpm build
 
 # runtime

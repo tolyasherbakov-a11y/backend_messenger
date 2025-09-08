@@ -18,7 +18,7 @@ RUN pnpm install
 FROM deps AS build
 WORKDIR /app
 COPY tsconfig.json ./
-COPY src ./src
+COPY index.ts ./index.ts
 RUN pnpm build
 
 # Runtime

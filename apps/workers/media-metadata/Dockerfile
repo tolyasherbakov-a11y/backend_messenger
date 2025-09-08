@@ -16,7 +16,6 @@ FROM deps AS build
 WORKDIR /app
 COPY tsconfig.json ./
 COPY index.ts ./index.ts
-COPY src ./src
 RUN pnpm build
 
 # runtime
