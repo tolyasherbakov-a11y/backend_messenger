@@ -36,6 +36,16 @@ export type Tokens = {
   sessionId: string;
 };
 
+export class AuthError extends Error {
+  statusCode: number;
+
+  constructor(statusCode: number, message: string) {
+    super(message);
+    this.statusCode = statusCode;
+    this.name = 'AuthError';
+  }
+}
+
 export class AuthService {
   constructor(private pool: Pool, private env = process.env) {}
 
@@ -293,9 +303,7 @@ export class AuthService {
     return new Date(d.getTime() + sec * 1000);
   }
 
-  private err(status: number, code: string): any {
-    const e: any = new Error(code);
-    e.statusCode = status;
-    return e;
+  private err(status: number, code: string): AuthError {
+    return new AuthError(status, code);
   }
 }
