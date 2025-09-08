@@ -2,6 +2,7 @@
 import IORedis, { Redis, Result } from 'ioredis';
 import { randomUUID } from 'node:crypto';
 import { env } from '@config/index';
+import { logger } from '@logger/index';
 
 export let redis: Redis | null = null;
 
@@ -12,7 +13,12 @@ export async function initRedis(): Promise<void> {
     maxRetriesPerRequest: null,
     enableReadyCheck: true
   });
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (err) {
+    logger.error(err, 'Failed to connect to Redis');
+    throw err;
+  }
   redis = client;
 }
 
