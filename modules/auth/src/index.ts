@@ -69,7 +69,8 @@ export class AuthService {
       if (msg.includes('ux_users_nickname_alive')) throw this.err(409, 'nickname_already_exists');
       throw e;
     }
-    return user!;
+    if (!user) throw this.err(500, 'user_not_created');
+    return user;
   }
 
   async login(input: { email: string; password: string; userAgent?: string; ipAddress?: string }): Promise<{ user: UserSafe; tokens: Tokens }> {
