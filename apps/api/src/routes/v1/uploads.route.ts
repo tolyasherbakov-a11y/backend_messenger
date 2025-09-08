@@ -145,6 +145,34 @@ export const uploadRoutes: FastifyPluginAsync = async (app: FastifyInstance) => 
     },
   });
 
+  // Presign upload part URLs
+  app.post('/v1/upload/:mediaId/parts', {
+    schema: {
+      params: { type: 'object', required: ['mediaId'], properties: { mediaId: { type: 'string' } } },
+      body: {
+        type: 'object',
+        required: ['key', 'uploadId', 'parts'],
+        properties: {
+          key: { type: 'string' },
+          uploadId: { type: 'string' },
+          parts: { type: 'array', items: { type: 'integer', minimum: 1 } },
+        },
+      },
+    },
+    handler: async (req, reply) => {
+      const ownerId = requireUser(req);
+      const { mediaId } = req.params as any;
+      const { key, uploadId, parts } = req.body as any;
+      const check = await pool.query(`SELECT 1 FROM media_files WHERE id=$1 AND owner_id=$2 LIMIT 1`, [String(mediaId), ownerId]);
+      if (!check.rowCount) { const e: any = new Error('forbidden'); e.statusCode = 403; throw e; }
+      const nums = (Array.isArray(parts) ? parts : [])
+        .map((n: any) => Number(n))
+        .filter((n: number) => Number.isInteger(n) && n > 0);
+      const out = await Promise.all(nums.map((n: number) => svc.presignPart({ key, uploadId, partNumber: n })));
+      return reply.send({ parts: out });
+    },
+  });
+
   // SIGN PART URLS — опущено ради краткости; у вас уже реализовано в модуле
 
   // COMPLETE — идемпотентность + публикация только AV/metadata
