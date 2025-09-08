@@ -4,6 +4,7 @@
  * persists a stable, production-safe loop with ack/retry semantics.
  */
 import IORedis from 'ioredis';
+import http from 'node:http';
 
 const {
   REDIS_URL = 'redis://localhost:6379/0',
@@ -11,6 +12,7 @@ const {
   GROUP_NOTIFY = 'g:notify',
   CONCURRENCY = '2',
   BLOCK_MS = '2000',
+  PORT = '9091',
 } = process.env;
 
 type NotifyPayload = {
@@ -60,6 +62,18 @@ async function run() {
   };
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
+
+  // Lightweight health endpoint
+  const port = Number(PORT) || 9091;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/healthz') {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ ok: true })); return;
+    }
+    res.statusCode = 404; res.end();
+  });
+  server.listen(port, '0.0.0.0');
 
   // Simple worker pool
   const workers: Promise<void>[] = [];
@@ -113,4 +127,3 @@ async function run() {
 }
 
 run().catch((e) => { console.error('notify: fatal', e); process.exit(1); });
-
