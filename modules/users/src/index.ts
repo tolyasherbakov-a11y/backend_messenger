@@ -1,5 +1,8 @@
 import argon2 from 'argon2';
+import postgres from 'postgres';
 import { sql } from '@db/index';
+
+const { PostgresError: DatabaseError } = postgres;
 
 export type UserRecord = {
   id: string;
@@ -46,8 +49,11 @@ export async function createUser(input: { email: string; password: string; displ
       VALUES (${email}, ${hash}, ${input.displayName}, ${input.roles ?? sql`'{}'::text[]`})
       RETURNING *
     `;
-  } catch (e: any) {
-    if (String(e?.message || '').includes('users_email_idx') || String(e?.message || '').includes('unique')) {
+  } catch (e) {
+    if (
+      e instanceof DatabaseError &&
+      (e.code === '23505' || e.constraint === 'users_email_idx')
+    ) {
       throw new Error('email_taken');
     }
     throw e;
