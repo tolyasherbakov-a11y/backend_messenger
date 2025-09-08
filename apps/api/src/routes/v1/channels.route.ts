@@ -15,6 +15,13 @@
  *  GET    /v1/channels/:id/follow             — статус подписки (auth)
  */
 
+/**
+ * Channels API
+ *  - List/create channels
+ *  - Get/update/publish/archive
+ *  - Manage members (add/remove/update role)
+ *  - Follow/unfollow state
+ */
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import { ChannelsService } from '@modules/channels';

@@ -10,6 +10,13 @@
  *  DELETE /v1/upload/:mediaId
  */
 
+/**
+ * Uploads API (S3 Multipart)
+ *  - initiate → returns { mediaId, key, uploadId, partSize }
+ *  - parts    → presign UploadPart URLs for provided part numbers
+ *  - complete → finalize multipart and enqueue antivirus/metadata
+ *  - abort    → abort multipart and remove DB record
+ */
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import Redis from 'ioredis';

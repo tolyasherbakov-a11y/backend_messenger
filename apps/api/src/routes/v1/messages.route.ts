@@ -8,6 +8,13 @@
  * Требование: (req as any).user.id установлен (см. auth preHandler).
  */
 
+/**
+ * Messages API
+ *  - List messages (keyset pagination)
+ *  - Send message (text|media)
+ *  - Mark delivered/read receipts
+ *  - Soft delete message
+ */
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import { MessagesService } from '@modules/messages';

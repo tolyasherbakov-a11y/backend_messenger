@@ -12,6 +12,13 @@
  * Требование: (req as any).user.id установлен (см. auth preHandler в main.ts).
  */
 
+/**
+ * Conversations API
+ *  - List conversations (keyset)
+ *  - Create private/group conversations
+ *  - Get/update conversation
+ *  - Manage members (add/remove/leave/update role)
+ */
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
 import { ConversationsService } from '@modules/conversations';
