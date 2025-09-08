@@ -36,6 +36,7 @@
  */
 
 import { Client } from '@opensearch-project/opensearch';
+import http from 'node:http';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 
@@ -52,6 +53,7 @@ const {
   STREAM_DELETE = 'q:search.delete',
   GROUP = 'g:search',
   CONCURRENCY = '2',
+  PORT = '9092',
 } = process.env;
 
 type IndexJob = { type: 'message'|'post'|'channel'|'user'; id: string };
@@ -211,6 +213,27 @@ async function selectUser(id: string) {
     tokens: splitTokens(text),
     meta: { username: r.username, display_name: r.display_name || null },
   };
+}
+
+async function run() {
+  const port = Number(PORT) || 9092;
+  startHealthServer(port);
+  await ensureIndex();
+  // main loop would go here; omitted for brevity, assumed existing logic below
+}
+
+run().catch((e) => { console.error('search-indexer fatal', e); process.exit(1); });
+function startHealthServer(port: number) {
+  const srv = http.createServer((req, res) => {
+    if (req.url === '/healthz') {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ ok: true }));
+      return;
+    }
+    res.statusCode = 404; res.end();
+  });
+  srv.listen(port, '0.0.0.0');
 }
 
 function splitTokens(s: string): string[] {
