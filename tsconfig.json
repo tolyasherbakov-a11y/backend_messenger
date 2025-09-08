@@ -1,0 +1,26 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/config" },
+    { "path": "packages/db" },
+    { "path": "packages/logger" },
+    { "path": "packages/redis" },
+    { "path": "packages/s3" },
+    { "path": "packages/validation" },
+    { "path": "packages/observability" },
+
+    { "path": "modules/auth" },
+    { "path": "modules/channels" },
+    { "path": "modules/communities" },
+    { "path": "modules/conversations" },
+    { "path": "modules/messages" },
+    { "path": "modules/posts" },
+    { "path": "modules/search" },
+    { "path": "modules/media" },
+    { "path": "modules/uploads" },
+
+    { "path": "apps/api" },
+    { "path": "apps/realtime" }
+  ]
+}
+

@@ -23,7 +23,7 @@ import {
   timerStart,
   pg_query_seconds,
   redis_cmd_seconds,
-} from '../../../packages/observability/src/index';
+} from '@observability';
 
 type Opts = {
   pool: Pool;

@@ -13,7 +13,7 @@
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
-import { AuthService } from '../../../../modules/auth/src/index';
+import { AuthService } from '@modules/auth';
 
 const {
   DB_URL = 'postgres://app:app@postgres:5432/app',

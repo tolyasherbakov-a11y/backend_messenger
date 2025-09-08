@@ -36,6 +36,17 @@ export const env = {
     url: process.env.REDIS_URL || 'redis://localhost:6379/0',
   },
 
+  // Security (for API plugins)
+  security: {
+    allowedOrigins: (process.env.CORS_ORIGIN || '*')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean),
+    maxJsonBody: process.env.MAX_JSON_BODY || '1mb',
+    enableHsts: bool(process.env.SEC_ENABLE_HSTS, true),
+    enableCsp: bool(process.env.SEC_ENABLE_CSP, false)
+  },
+
   // S3 (Yandex Object Storage совместимый)
   s3: {
     endpoint: process.env.S3_ENDPOINT || 'https://storage.yandexcloud.net',
@@ -56,6 +67,12 @@ export const env = {
     publicKey: process.env.AUTH_JWT_PUBLIC_KEY || undefined,   // SPKI/PEM
     secret: process.env.AUTH_JWT_SECRET || undefined,          // HS256
     clockLeewaySec: num(process.env.AUTH_LEEWAY_SEC, 60)
+  },
+
+  // Rate limit (requests per minute)
+  ratelimit: {
+    globalPerMin: num(process.env.RL_GLOBAL_PER_MIN, 120),
+    authPerMin: num(process.env.RL_AUTH_PER_MIN, 30)
   },
 
   // FFMPEG

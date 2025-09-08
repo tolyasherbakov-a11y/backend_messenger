@@ -56,12 +56,15 @@ function makeCspHeader(req: FastifyRequest): { headerValue: string; nonce: strin
 function registerJsonBodyLimit(app: FastifyInstance, limit: string) {
   // Удаляем стандартный парсер JSON и регистрируем свой с лимитом
   app.removeContentTypeParser('application/json');
-  app.addContentTypeParser('application/json', { parseAs: 'string', bodyLimit: limitToBytes(limit) }, (req, body, done) => {
+  app.addContentTypeParser('application/json', { parseAs: 'string', bodyLimit: limitToBytes(limit) }, (_req, body, done) => {
     try {
       const json = body && body.length ? JSON.parse(body as string) : {};
       done(null, json);
     } catch (e: any) {
-      done(app.httpErrors.badRequest('Invalid JSON'));
+      const err = new Error('Invalid JSON');
+      // @ts-ignore mark status for Fastify error handler
+      (err as any).statusCode = 400;
+      done(err as any);
     }
   });
 }

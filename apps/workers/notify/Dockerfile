@@ -11,9 +11,8 @@ WORKDIR /app
 # Зависимости
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm fetch
-RUN pnpm install --frozen-lockfile
+COPY package.json ./
+RUN pnpm install
 
 # Сборка TS
 FROM deps AS build
@@ -29,10 +28,8 @@ WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 USER app
 
-COPY --chown=app:app package.json pnpm-lock.yaml ./
-RUN corepack enable && corepack prepare pnpm@9.7.1 --activate \
-    && pnpm fetch --prod \
-    && pnpm install --prod --frozen-lockfile
+COPY --chown=app:app package.json ./
+RUN corepack enable && corepack prepare pnpm@9.7.1 --activate && pnpm install --prod
 
 COPY --chown=app:app --from=build /app/dist ./dist
 

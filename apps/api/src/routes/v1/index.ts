@@ -8,6 +8,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 // Роуты v1
 import uploadsRoutes from './uploads.route';
+import mediaRoutes from './media.route';
 import authRoutes from './auth.route';
 import conversationsRoutes from './conversations.route';
 import messagesRoutes from './messages.route';
@@ -22,6 +23,7 @@ export interface V1RoutesOpts {
 export const v1Routes: FastifyPluginAsync<V1RoutesOpts> = async (app: FastifyInstance) => {
   // uploads
   await app.register(uploadsRoutes);
+  await app.register(mediaRoutes);
   await app.register(authRoutes);
   await app.register(conversationsRoutes);
   await app.register(messagesRoutes);

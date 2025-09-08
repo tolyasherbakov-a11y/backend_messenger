@@ -3,12 +3,12 @@
  * Swagger и корректным graceful shutdown. Подключает v1Routes под префиксом /v1.
  */
 import Fastify, { FastifyInstance } from 'fastify';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
+import metricsPlugin from './plugins/metrics';
+import { registerOpenAPI } from './plugins/openapi';
+import { registerValidation } from './plugins/validation';
+import { registerSecurity } from './plugins/security';
+import { registerRateLimit } from './plugins/ratelimit';
 
 import { Pool } from 'pg';
 import Redis from 'ioredis';
@@ -82,6 +82,13 @@ const app: FastifyInstance = Fastify({
   genReqId: () => cryptoRandomId(),
 });
 
+// Core plugins & hardening
+await registerValidation(app);
+await registerSecurity(app);
+await registerRateLimit(app);
+await registerOpenAPI(app);
+await app.register(metricsPlugin, { pool: pgPool, redis });
+
 function nonce() {
   return Buffer.from(cryptoRandomId()).toString('base64');
 }
@@ -121,50 +128,14 @@ await app.register(helmet, {
     : false,
 });
 
-await app.register(cors, {
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (corsAllow.length === 0) return cb(null, true);
-    const allowed = corsAllow.some((o) => origin.startsWith(o));
-    cb(null, allowed);
-  },
-  credentials: true,
-  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  maxAge: 600,
-});
+// CORS handled by security plugin
 
-await app.register(rateLimit, {
-  max: 200,
-  timeWindow: '1 minute',
-  allowList: [],
-  ban: 0,
-  keyGenerator: (req) => {
-    return (req.headers['cf-connecting-ip'] as string)
-      || (req.headers['x-real-ip'] as string)
-      || (req.headers['x-forwarded-for'] as string)
-      || req.ip;
-  },
-});
+// Rate limit handled by ratelimit plugin
 
 // Вебсокеты
 await app.register(websocket);
 
-// OpenAPI
-await app.register(swagger, {
-  openapi: {
-    info: { title: 'Messaging+Media API', version: '1.0.0' },
-    servers: PUBLIC_URL ? [{ url: PUBLIC_URL }] : [],
-  },
-});
-if (!isProd || !!PUBLIC_URL) {
-  await app.register(swaggerUi, {
-    routePrefix: '/docs',
-    uiConfig: {
-      docExpansion: 'list',
-      deepLinking: true,
-    },
-  });
-}
+// OpenAPI handled by registerOpenAPI
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Health & Ready

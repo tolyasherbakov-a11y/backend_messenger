@@ -1,28 +1,34 @@
 {
-    "compilerOptions": {
-      "target": "ES2022",
-      "lib": ["ES2022"],
-      "module": "NodeNext",
-      "moduleResolution": "NodeNext",
-      "allowSyntheticDefaultImports": true,
-      "esModuleInterop": true,
-      "forceConsistentCasingInFileNames": true,
-      "skipLibCheck": true,
-      "strict": true,
-      "resolveJsonModule": true,
-      "sourceMap": true,
-      "declaration": true,
-      "declarationMap": true,
-      "baseUrl": ".",
-      "paths": {
-        "@config/*": ["packages/config/src/*"],
-        "@db/*": ["packages/db/src/*"],
-        "@redis/*": ["packages/redis/src/*"],
-        "@s3/*": ["packages/s3/src/*"],
-        "@logger/*": ["packages/logger/src/*"],
-        "@validation/*": ["packages/validation/src/*"],
-        "@modules/*": ["modules/*/src/*"]
-      }
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@config/*": ["packages/config/src/*"],
+      "@db/*": ["packages/db/src/*"],
+      "@redis/*": ["packages/redis/src/*"],
+      "@s3/*": ["packages/s3/src/*"],
+      "@logger/*": ["packages/logger/src/*"],
+      "@validation/*": ["packages/validation/src/*"],
+      "@modules/*": [
+        "modules/*/src/index.ts",
+        "modules/*/src/*",
+        "modules/*/index.ts",
+        "modules/*/*"
+      ],
+      "@modules/media": ["modules/media/index.ts"]
     }
   }
+}
   

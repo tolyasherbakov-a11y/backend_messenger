@@ -10,7 +10,7 @@
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
-import { MessagesService } from '../../../../modules/messages/src/index';
+import { MessagesService } from '@modules/messages';
 
 const { DB_URL = 'postgres://app:app@postgres:5432/app' } = process.env;
 

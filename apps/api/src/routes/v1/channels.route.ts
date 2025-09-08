@@ -17,7 +17,7 @@
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
-import { ChannelsService } from '../../../../modules/channels/src/index';
+import { ChannelsService } from '@modules/channels';
 
 const { DB_URL = 'postgres://app:app@postgres:5432/app' } = process.env;
 

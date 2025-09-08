@@ -1,5 +1,5 @@
 // server/apps/api/src/plugins/ratelimit.ts
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import rateLimit, { RateLimitPluginOptions } from '@fastify/rate-limit';
 
 type PerRouteRate = Pick<RateLimitPluginOptions, 'max' | 'timeWindow' | 'allowList' | 'ban' | 'hook'>;

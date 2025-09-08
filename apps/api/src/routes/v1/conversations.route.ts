@@ -14,7 +14,7 @@
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Pool } from 'pg';
-import { ConversationsService } from '../../../../modules/conversations/src/index';
+import { ConversationsService } from '@modules/conversations';
 
 const { DB_URL = 'postgres://app:app@postgres:5432/app' } = process.env;
 

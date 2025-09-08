@@ -9,7 +9,7 @@
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import SearchService, { SearchType } from '../../../../modules/search/src/index';
+import SearchService, { SearchType } from '@modules/search';
 
 function requireUser(req: any) {
   const uid = req.user?.id;

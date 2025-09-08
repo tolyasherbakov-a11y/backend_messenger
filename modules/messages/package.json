@@ -1,5 +1,5 @@
 {
-  "name": "@modules/channels",
+  "name": "@modules/messages",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -18,4 +18,4 @@
     "pg": "^8.12.0"
   }
 }
-  
+

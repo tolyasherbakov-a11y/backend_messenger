@@ -34,6 +34,7 @@ import { WebSocket } from 'ws';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 
 const {
   PORT = '8080',
@@ -95,7 +96,6 @@ function verifyHmacAuth(headers: Record<string, any>): AuthedUser | null {
   const ts = String(headers['x-timestamp'] || '');
   const sig = String(headers['x-signature'] || '');
   if (!uid || !isUuid(uid) || !ts || !sig) return null;
-  const crypto = await import('node:crypto');
   const base = `${uid}:${ts}`;
   const expected = crypto.createHmac('sha256', AUTH_HMAC_SECRET).update(base).digest('hex');
   if (expected !== sig) return null;
