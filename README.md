@@ -54,6 +54,7 @@ Workers live in `apps/workers/*` and are built similarly. Dockerfiles are provid
 
 ```bash
 pnpm --filter worker-search-indexer build && pnpm --filter worker-search-indexer start
+pnpm --filter worker-notify build && pnpm --filter worker-notify start
 ```
 
 ## Notes

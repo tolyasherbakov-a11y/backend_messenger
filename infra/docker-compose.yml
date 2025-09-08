@@ -294,6 +294,27 @@ services:
       opensearch:
         condition: service_started
     networks: [ backend ]
+
+  worker-notify:
+    build:
+      context: ../apps/workers/notify
+      dockerfile: Dockerfile
+    container_name: backend-worker-notify
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379/0
+      STREAM_NOTIFY: q:notify
+      GROUP_NOTIFY: g:notify
+      CONCURRENCY: 2
+      BLOCK_MS: 2000
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
   
   opensearch:
     image: opensearchproject/opensearch:2.12.0

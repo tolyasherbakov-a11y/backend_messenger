@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRegisterOptions } from 'fastify';
 import swagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { env } from '@config/index';
-// zod may be used for examples if needed
+import { z } from 'zod';
 
 function buildSwaggerOptions(): FastifyRegisterOptions<FastifyDynamicSwaggerOptions> {
   const openapi: any = {
