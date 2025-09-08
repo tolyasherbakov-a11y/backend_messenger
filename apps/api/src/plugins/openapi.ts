@@ -28,7 +28,16 @@ function buildSwaggerOptions(): FastifyRegisterOptions<FastifyDynamicSwaggerOpti
 }
 
 export async function registerOpenAPI(app: FastifyInstance) {
-  await app.register(swagger, buildSwaggerOptions());
+  // Build servers dynamically: include PUBLIC_URL if provided
+  const pub = process.env.PUBLIC_URL;
+  const base = buildSwaggerOptions();
+  if (pub && typeof pub === 'string' && pub.trim()) {
+    (base as any).openapi.servers = [
+      { url: pub.trim(), description: 'Public URL' },
+      ...(Array.isArray((base as any).openapi.servers) ? (base as any).openapi.servers : []),
+    ];
+  }
+  await app.register(swagger, base);
   await app.register(swaggerUI, {
     routePrefix: '/docs',
     uiConfig: {
