@@ -140,33 +140,7 @@ await app.register(websocket);
 // ──────────────────────────────────────────────────────────────────────────────
 // Health & Ready
 // ──────────────────────────────────────────────────────────────────────────────
-app.get('/healthz', async () => {
-  return { status: 'ok', ts: new Date().toISOString() };
-});
-
-app.get('/readyz', async (req, reply) => {
-  let dbOk = false;
-  let redisOk = false;
-
-  try {
-    const q = await pgPool.query('SELECT 1');
-    dbOk = q.rowCount === 1;
-  } catch (e) {
-    req.log.error({ err: e }, 'readiness: postgres failed');
-  }
-
-  try {
-    const pong = await redis.ping();
-    redisOk = pong === 'PONG';
-  } catch (e) {
-    req.log.error({ err: e }, 'readiness: redis failed');
-  }
-
-  const ok = dbOk && redisOk;
-  return reply
-    .code(ok ? 200 : 500)
-    .send({ status: ok ? 'ready' : 'degraded', postgres: dbOk, redis: redisOk, ts: new Date().toISOString() });
-});
+// healthz/readyz are provided by metrics plugin
 
 // ──────────────────────────────────────────────────────────────────────────────
 // WS endpoint (скелет событий мессенджера)
